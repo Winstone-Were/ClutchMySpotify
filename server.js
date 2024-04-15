@@ -29,7 +29,7 @@ const express = require('express');
 const app = express();
 
 app.get('/login', (req, res) => {
-    const scopes = ['user-read-private', 'user-read-email', 'user-read-playback-state', 'user-modify-playback-state'];
+    const scopes = ['user-read-private', 'user-read-email', 'user-read-playback-state', 'user-modify-playback-state', 'user-read-recently-played'];
     res.redirect(spotifyAPI.createAuthorizeURL(scopes));
 });
 
@@ -54,13 +54,11 @@ app.get('/callback', (req, res) => {
         spotifyAPI.setAccessToken(accessToken);
         spotifyAPI.setRefreshToken(refreshToken);
 
-        spotifyAPI.getMe().then(data=> console.log(data));
-
         console.log('The access token is ' + accessToken);
         console.log('The refresh token is ' + refreshToken);
 
 
-        //Refresh token  
+        
         setInterval(async () => {
             const data = await spotifyApi.refreshAccessToken();
             const accessTokenRefreshed = data.body['access_token'];
@@ -69,7 +67,7 @@ app.get('/callback', (req, res) => {
 
     }).catch(error => {
         console.error('Error getting Tokens:');
-        res.send('Error getting tokens');
+        res.send(error);
     });
 });
 
@@ -98,17 +96,18 @@ app.get('/play', (req, res) => {
 
 app.get('/myRecentTracks', (req, res) => {
 
-    spotifyAPI.authorizationCodeGrant(AuthorizationCode).getMyRecentlyPlayedTracks({ limit: 20 }).then(data => {
-        console.log(data.body.items);
+    spotifyAPI.getMyRecentlyPlayedTracks({ limit: 20 }).then(data => {
+        res.send(data.body.items);
     })
 
 });
 
 app.get('/getMe', (req, res) => {
-    
+    spotifyAPI.getMe().then(data=> res.send(data));
 })
 
 const port = process.env.PORT;
 
 app.get('/', (req, res) => res.send('Hello World!'));
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+
