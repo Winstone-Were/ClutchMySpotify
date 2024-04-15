@@ -18,7 +18,6 @@ require('dotenv').config();
 
 const SpotifyWebApi = require("spotify-web-api-node");
 
-console.log(process.env);
 
 const spotifyAPI = new SpotifyWebApi({
     clientId: process.env.CLIENT_ID,
@@ -29,27 +28,32 @@ const spotifyAPI = new SpotifyWebApi({
 const express = require('express');
 const app = express();
 
-app.get('/login', (req,res)=>{
+app.get('/login', (req, res) => {
     const scopes = ['user-read-private', 'user-read-email', 'user-read-playback-state', 'user-modify-playback-state'];
     res.redirect(spotifyAPI.createAuthorizeURL(scopes));
 });
 
+let AuthorizationCode;
+
 //Once this runs, you should be able to access the other endpoints
-app.get('/callback', (req,res)=>{
+app.get('/callback', (req, res) => {
     const error = req.query.error;
     const code = req.query.code;
 
-    if(error){
+    AuthorizationCode = code;
+
+    if (error) {
         //Code to handle some sort of error
     }
 
-    spotifyAPI.authorizationCodeGrant(code).then(data=> {
+    spotifyAPI.authorizationCodeGrant(code).then(data => {
         const accessToken = data.body['access_token'];
         const refreshToken = data.body['refresh_token'];
         const expiresIn = data.body['expires_in'];
 
         spotifyAPI.setAccessToken(accessToken);
         spotifyAPI.setRefreshToken(refreshToken);
+
 
         console.log('The access token is ' + accessToken);
         console.log('The refresh token is ' + refreshToken);
@@ -60,36 +64,55 @@ app.get('/callback', (req,res)=>{
             const data = await spotifyApi.refreshAccessToken();
             const accessTokenRefreshed = data.body['access_token'];
             spotifyApi.setAccessToken(accessTokenRefreshed);
-        }, expiresIn / 2 * 1000); 
-        
+        }, expiresIn / 2 * 1000);
+
     }).catch(error => {
-        console.error('Error getting Tokens:', error);
+        console.error('Error getting Tokens:');
         res.send('Error getting tokens');
-    });  
+    });
 });
 
-app.get('/get',(req,res)=>{
-    const {q} = req.query;
+app.get('/get', (req, res) => {
+    const { q } = req.query;
 
-    spotifyAPI.searchTracks(q).then(results=>{ 
+    spotifyAPI.searchTracks(q).then(results => {
         const trackURI = results.body.tracks.items[0].uri;
-        res.send({uri: trackURI});
-    }).catch(ERROR=>{ 
+        res.send({ uri: trackURI });
+    }).catch(ERROR => {
         //Someone to send this error in a better way 
         res.send(ERROR);
     });
 
 });
 
-app.get('/play', (req,res)=>{
-    const {uri} = req.query;
+app.get('/play', (req, res) => {
+    const { uri } = req.query;
 
-    spotifyAPI.play({uris: [uri]}).then(()=>{
+    spotifyAPI.play({ uris: [uri] }).then(() => {
         res.send('Playing');
-    }).catch(ERROR=>{
+    }).catch(ERROR => {
         res.send(ERROR);
     });
 });
+
+app.get('/myRecentTracks', (req, res) => {
+
+    spotifyAPI.authorizationCodeGrant(AuthorizationCode).getMyRecentlyPlayedTracks({ limit: 20 }).then(data => {
+        console.log(data.body.items);
+    })
+
+});
+
+app.get('/getMe', (req, res) => {
+    console.log('AuthCode', AuthorizationCode);
+    spotifyAPI.authorizationCodeGrant(AuthorizationCode)
+        .then(data => {
+            console.log('we get this back');
+            console.log('Retreived Token', data.body['access_token']);
+            spotifyAPI.setAccessToken(data.body['access_token']);
+            return spotifyAPI.getMe();
+        }).catch(err=> res.send(err));
+})
 
 const port = process.env.PORT;
 
