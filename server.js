@@ -54,6 +54,7 @@ app.get('/callback', (req, res) => {
         spotifyAPI.setAccessToken(accessToken);
         spotifyAPI.setRefreshToken(refreshToken);
 
+        spotifyAPI.getMe().then(data=> console.log(data));
 
         console.log('The access token is ' + accessToken);
         console.log('The refresh token is ' + refreshToken);
@@ -104,14 +105,7 @@ app.get('/myRecentTracks', (req, res) => {
 });
 
 app.get('/getMe', (req, res) => {
-    console.log('AuthCode', AuthorizationCode);
-    spotifyAPI.authorizationCodeGrant(AuthorizationCode)
-        .then(data => {
-            console.log('we get this back');
-            console.log('Retreived Token', data.body['access_token']);
-            spotifyAPI.setAccessToken(data.body['access_token']);
-            return spotifyAPI.getMe();
-        }).catch(err=> res.send(err));
+    
 })
 
 const port = process.env.PORT;
