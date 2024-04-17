@@ -26,7 +26,10 @@ const spotifyAPI = new SpotifyWebApi({
 });
 
 const express = require('express');
+const cors = require('cors')
 const app = express();
+
+app.use(cors());
 
 app.get('/login', (req, res) => {
     const scopes = ['user-read-private', 'user-read-email', 'user-read-playback-state', 'user-modify-playback-state', 'user-read-recently-played'];
