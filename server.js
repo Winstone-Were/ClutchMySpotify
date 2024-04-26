@@ -28,6 +28,7 @@ const spotifyAPI = new SpotifyWebApi({
 const express = require('express');
 const cors = require('cors')
 const app = express();
+app.use(express.static('App'));
 
 app.use(cors());
 
@@ -97,11 +98,29 @@ app.get('/play', (req, res) => {
     });
 });
 
+app.get('/getMe',(req,res)=>{
+
+    let UserObject = {
+        userName:'',
+        images: [],
+    }
+
+    spotifyAPI.getMe().then(data=>{
+        console.log('Some information about the authenticated user', data.body);
+        UserObject.userName = data.body.display_name;
+        UserObject.images = data.body.images;
+        res.send(UserObject);
+    }).catch(err=> {
+        console.error(err);
+        res.send(err);
+    });
+})
+
 app.get('/myRecentTracks', (req, res) => {
 
     spotifyAPI.getMyRecentlyPlayedTracks({ limit: 20 }).then(data => {
         res.send(data.body.items);
-    })
+    });
 
 });
 
